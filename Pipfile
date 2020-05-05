@@ -15,4 +15,4 @@ python_version = "3.6"
 
 [scripts]
 format = "autopep8 -ivr ."
-lint = "flake8 --show-source ."
+lint = "flake8 --ignore=E501 --show-source ."

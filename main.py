@@ -31,7 +31,7 @@ class RemoteWorkstation:
     def get_ssh_keys(self):
         return self.__manager().get_all_sshkeys()
 
-    def get_server_by_tag(self):
+    def get_server_by_name(self):
         droplets = self.__manager().get_all_droplets(tag_name=self.server_tag)
 
         for d in droplets:
@@ -77,7 +77,7 @@ class RemoteWorkstation:
         return droplet.id
 
     def get_or_create_server(self):
-        s = self.get_server_by_tag()
+        s = self.get_server_by_name()
         if s is not None:
             return s
 
@@ -92,7 +92,7 @@ class RemoteWorkstation:
         return server_id
 
     def destroy_server(self):
-        s = self.get_server_by_tag()
+        s = self.get_server_by_name()
         if s is not None:
             if self.floating_ip is not None and self.floating_ip != "":
                 ip = self.__manager().get_floating_ip(self.floating_ip)
@@ -104,7 +104,7 @@ class RemoteWorkstation:
         return textwrap.dedent('''
         #cloud-config
 
-        runcmd:  
+        runcmd:
           - mkdir -p /root/.bootstrap
           - curl -sL https://github.com/itamae-kitchen/mitamae/releases/latest/download/mitamae-x86_64-linux.tar.gz | tar xvz
           - mv ./mitamae-x86_64-linux /root/.bootstrap/mitamae
