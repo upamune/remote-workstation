@@ -1,98 +1,127 @@
 #!/usr/bin/env python3
 import optparse
 import sys
+import textwrap
 import time
-import vultr
+import digitalocean as do
 
 
 class RemoteWorkstation:
-    DCID = 25  # Tokyo
-    VPS_PLAN_ID = 204  # 8192 MB RAM,160 GB SSD,4.00 TB BW
-    OS_ID = 387  # Ubuntu 20.04
-    HOSTNAME = 'nyao'
+    REGION = 'SGP1'  # Singapore
+    SIZE_SLUG = 's-6vcpu-16gb'  # 6vCPUs, 16GB, 320GB, 6TB BW
+    IMAGE = 'ubuntu-20-04-x64'  # Ubuntu 20.04 LTS
 
-    def __init__(self, token, server_label='remote_workstation', firewall_id=None, snapshot_id=None,
-                 reserved_ip_v4=None, startup_script_id=None):
+    def __init__(self,
+                 token,
+                 server_name='remote-workstation',
+                 server_tag='remote-workstation',
+                 firewall_id=None,
+                 snapshot_id=None,
+                 floating_ip=None):
         self.token = token
-        self.server_label = server_label
+        self.server_name = server_name
+        self.server_tag = server_tag
         self.firewall_id = firewall_id
         self.snapshot_id = snapshot_id
-        self.reserved_ip_v4 = reserved_ip_v4
-        self.startup_script_id = startup_script_id
+        self.floating_ip = floating_ip
 
     def __manager(self):
-        return vultr.Vultr(self.token)
+        return do.Manager(token=self.token)
 
-    def get_ssh_key_ids(self):
-        resp = self.__manager().sshkey.list()
-        if len(resp) == 0:
-            return ""
+    def get_ssh_keys(self):
+        return self.__manager().get_all_sshkeys()
 
-        return ",".join(list(resp.keys()))
+    def get_server_by_tag(self):
+        droplets = self.__manager().get_all_droplets(tag_name=self.server_tag)
 
-    def get_server_by_sub_id(self, sub_id):
-        resp = self.__manager().server.list(sub_id)
-        if len(resp) == 0:
-            return None
+        for d in droplets:
+            if d.name == self.server_name:
+                return d
 
-        return resp
+        return None
 
-    def get_server_by_label(self):
-        resp = self.__manager().server.list(params={"label": self.server_label})
-        if len(resp) == 0:
-            return None
+    def get_server_by_id(self, server_id):
+        return self.__manager().get_droplet(server_id)
 
-        first_key = list(resp.keys())[0]
-        return resp[first_key]
+    def __create_server(self):
+        image = self.snapshot_id \
+            if self.snapshot_id is not None and self.snapshot_id != "" \
+            else self.IMAGE
 
-    def __create_server(self, params):
-        resp = self.__manager().server.create(self.DCID, self.VPS_PLAN_ID, self.OS_ID, params)
-        return resp["SUBID"]
+        ssh_keys = self.get_ssh_keys()
+
+        droplet = do.Droplet(
+            token=self.token,
+            name=self.server_name,
+            tags=[self.server_tag],
+            region=self.REGION,
+            size=self.SIZE_SLUG,
+            image=image,
+            ssh_keys=ssh_keys,
+            user_data=self.__user_data(),
+        )
+        droplet.create()
+
+        if self.firewall_id is not None and self.firewall_id != "":
+            firewall = self.__manager().get_firewall(self.firewall_id)
+            firewall.add_droplets(droplet_ids=[droplet.id])
+
+        if self.floating_ip is not None and self.floating_ip != "":
+            actions = droplet.get_actions()
+            if len(actions) > 0:
+                action = actions[0]
+                action.wait()
+            floating_ip = self.__manager().get_floating_ip(self.floating_ip)
+            floating_ip.assign(droplet_id=droplet.id)
+
+        return droplet.id
 
     def get_or_create_server(self):
-        s = self.get_server_by_label()
+        s = self.get_server_by_tag()
         if s is not None:
             return s
 
-        ssh_key_ids = self.get_ssh_key_ids()
-        params = {
-            "label": self.server_label,
-            "userdata": self.__user_data(),
-            "hostname": self.HOSTNAME,
-            "SSHKEYID": ssh_key_ids,
-        }
-        if self.snapshot_id is not None and self.snapshot_id is not "":
-            params["SNAPSHOTID"] = self.snapshot_id
-        if self.firewall_id is not None and self.firewall_id is not "":
-            params["FIREWALLGROUPID"] = self.firewall_id
-        if self.reserved_ip_v4 is not None and self.reserved_ip_v4 is not "":
-            params["reserved_ip_v4"] = self.reserved_ip_v4
-        if self.startup_script_id is not None and self.startup_script_id is not "":
-            params["SCRIPTID"] = int(self.startup_script_id)
-
-        server_id = self.__create_server(params)
+        server_id = self.__create_server()
 
         for _ in range(10):
-            s = self.get_server_by_sub_id(server_id)
-            if s is not None and s["status"] == "active":
+            s = self.get_server_by_id(server_id)
+            if s is not None:
                 return s
-            time.sleep(5)  # 5sec
+            time.sleep(3)
 
         return server_id
 
     def destroy_server(self):
-        s = self.get_server_by_label()
+        s = self.get_server_by_tag()
         if s is not None:
-            self.__manager().server.destroy(s["SUBID"])
+            if self.floating_ip is not None and self.floating_ip != "":
+                ip = self.__manager().get_floating_ip(self.floating_ip)
+                ip.unassign()
+            s.destroy()
+
+    @staticmethod
+    def __user_data():
+        return textwrap.dedent('''
+        #cloud-config
+
+        runcmd:  
+          - mkdir -p /root/.bootstrap
+          - curl -sL https://github.com/itamae-kitchen/mitamae/releases/latest/download/mitamae-x86_64-linux.tar.gz | tar xvz
+          - mv ./mitamae-x86_64-linux /root/.bootstrap/mitamae
+          - curl -sLO https://raw.githubusercontent.com/upamune/remote-workstation/master/recipe.rb
+          - mv ./recipe.rb /root/.bootstrap/recipe.rb
+          - echo "#!/bin/bash -eu" > /root/.bootstrap/bootstrap.sh
+          - echo "./mitamae local recipe.rb" >> /root/.bootstrap/bootstrap.sh
+          - chmod +x /root/.bootstrap/bootstrap.sh
+        ''').strip()
 
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option('--token', action='store', dest='token')
     parser.add_option('--snapshot-id', action='store', dest='snapshot_id')
-    parser.add_option('--reserved-ip-v4', action='store', dest='reserved_ip_v4')
+    parser.add_option('--floating-ip', action='store', dest='floating_ip')
     parser.add_option('--firewall-id', action='store', dest='firewall_id')
-    parser.add_option('--startup-script-id', action='store', dest='startup_script_id')
     options, args = parser.parse_args()
 
     if options.token is None or options.token == "":
@@ -106,14 +135,13 @@ if __name__ == '__main__':
     cmd = args[0]
     ws = RemoteWorkstation(token=options.token,
                            snapshot_id=options.snapshot_id,
-                           reserved_ip_v4=options.reserved_ip_v4,
-                           firewall_id=options.firewall_id,
-                           startup_script_id=options.startup_script_id)
+                           floating_ip=options.floating_ip,
+                           firewall_id=options.firewall_id)
 
     if cmd == "create":
         server = ws.get_or_create_server()
-        print(server["SUBID"])
-        print(server["main_ip"])
+        print(server.id)
+        print(server.ip_address)
     elif cmd == "destroy":
         ws.destroy_server()
         print('destroyed')

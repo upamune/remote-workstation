@@ -8,44 +8,42 @@ Do not use this repository if you are not upamune.
 - Pipenv
 
 ## Preparation
-1. Add SSH Keys in [web console](https://my.vultr.com/settings/#settingssshkeys)
-1. Enable API in [web console](https://my.vultr.com/settings/#settingsapi)
-1. (optional) Add a startup script in [web console](https://my.vultr.com/startup/manage)
-1. (optional) Add a firewall in [web console](https://my.vultr.com/firewall/)
-1. (optional) Add a Reserved IP in [web console](https://my.vultr.com/network/#network-reservedips)
+1. Add SSH Keys in [web console](https://cloud.digitalocean.com/account/security)
+1. Generate a personal access token in [web console](https://cloud.digitalocean.com/account/api/tokens)
+1. (optional) Add a firewall in [web console](https://cloud.digitalocean.com/networking/firewalls)
+1. (optional) Add a floating IP in [web console](https://cloud.digitalocean.com/networking/floating_ips)
 
 ## Execute
 
 ### Create
 
-Idempotently by label. Default label is `remote-workstation`.
+Idempotently by name. Default name is `remote-workstation`.
 
 #### Options
 
+- `--token`
+  - required
 - `--firewall-id`
   - optional
-- `--reserved-ip-v4`
-  - optional
-- `--startup-script-id`
+- `--floating-ip`
   - optional
 - `--snapshot-id`
   - optional
 
-
 #### Example 
 
 ```shell script
-# Create an instance from startup script.
-$ python ./main.py create --token "${VULTR_API_KEY}" --firewall-id foo --startup-script-id bar --reserved-ip-v4 203.0.113.1
+# Create an instance.
+$ python ./main.py create --token "${DIGITAL_OCEAN_API_KEY}" --firewall-id "${FIREWALL_ID}" --floating-ip "${FLOATING_IP}"
 
 # Create an instance from snapshot.
-$ python ./main.py create --token "${VULTR_API_KEY}" --firewall-id foo --snapshot-id bar --reserved-ip-v4 203.0.113.1
+$ python ./main.py create --token "${DIGITAL_OCEAN_API_KEY}" --firewall-id "${FIREWALL_ID}" --floating-ip "${FLOATING_IP}" --snapshot-id "${SNAPSHOT_ID}"
 ```
 
 ### Destroy
 
 ```shell script
-$ python ./main.py destroy --token "${VULTR_API_KEY}"
+$ python ./main.py destroy --token "${DIGITAL_OCEAN_API_KEY}"
 ```
 
 ## Development
