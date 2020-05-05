@@ -141,7 +141,10 @@ if __name__ == '__main__':
     if cmd == "create":
         server = ws.get_or_create_server()
         print(server.id)
-        print(server.ip_address)
+
+        floating_ip = options.floating_ip
+        ip_address = floating_ip if floating_ip is not None and floating_ip != "" else server.ip_address
+        print(ip_address)
     elif cmd == "destroy":
         ws.destroy_server()
         print('destroyed')
