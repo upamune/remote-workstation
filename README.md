@@ -1,5 +1,7 @@
 # remote-workstation
 
+![test](https://github.com/upamune/remote-workstation/workflows/test/badge.svg?branch=master)
+
 Do not use this repository if you are not upamune.
 
 ## Requirements
