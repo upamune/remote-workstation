@@ -83,3 +83,7 @@ end
 execute "Copy go tools to /usr/local/bin" do
     command "cp -fr $(go env GOPATH)/bin/* /usr/local/bin/"
 end
+
+execute "Set correct timezone" do
+    command "timedatectl set-timezone Asia/Tokyo"
+end
