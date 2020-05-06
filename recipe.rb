@@ -36,6 +36,7 @@ packages = [
   'tig',
   'tmux',
   'tree',
+  'tzdata',
   'unzip',
   'vim',
   'vim-gtk3',
@@ -85,6 +86,6 @@ execute "Copy go tools to /usr/local/bin" do
 end
 
 execute "Set correct timezone" do
-    command "timedatectl set-timezone Asia/Tokyo"
+    command "ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime"
 end
 
