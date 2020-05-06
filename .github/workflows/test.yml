@@ -1,13 +1,12 @@
 name: test
-on:
-  push:
-    branches:
-      - master
-  pull_request:
+on: push
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+    - uses: technote-space/auto-cancel-redundant-job@gh-actions
+      with:
+        EXCLUDE_MERGED: 'true'
     - uses: actions/checkout@v2
     - name: test
       run: ./test-receipe.sh
