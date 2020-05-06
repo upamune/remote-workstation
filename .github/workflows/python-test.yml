@@ -1,7 +1,7 @@
-name: lint python
+name: python test
 on: push
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-latest
     steps:
     - uses: technote-space/auto-cancel-redundant-job@gh-actions
@@ -17,6 +17,6 @@ jobs:
         python -m pip install --upgrade pip
         pip install pipenv --upgrade-strategy=only-if-needed
         pipenv install --dev
-    - name: Run test
+    - name: Run lint
       run: |
         pipenv run lint
