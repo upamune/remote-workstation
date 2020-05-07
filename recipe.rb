@@ -90,7 +90,9 @@ execute "Install 1Password CLI" do
   not_if "test -e /usr/local/bin/op"
 end
 
-pull_secret_content = <<-"EOS"
+file "/root/.bootstrap/pull-secrets.sh" do
+  mode "0700"
+  content <<-"EOS"
 #!/bin/bash -eu
 echo "Authenticating with 1Password"
 export OP_SESSION_my=$(op signin https://my.1password.com upamune@gmail.com --output=raw)
@@ -100,17 +102,12 @@ op get document 'id_ed25519' --vault "${OP_VAULT}" > id_ed25519
 op get document 'gpg.private' --vault "${OP_VAULT}" > gpg.private
 op get document 'gpg.public' --vault "${OP_VAULT}" > gpg.public
 rm -f ~/.ssh/id_ed25519
-mkdir -p ~/.ssh
-chmod 0700 ~/.ssh
 ln -sfn $(pwd)/id_ed25519 ~/.ssh/id_ed25519
 chmod 0600 ~/.ssh/id_ed25519
 gpg --import gpg.private
 gpg --import gpg.public
 echo "Done!"
 EOS
-
-execute "Create pull-secret.sh" do
-  command "echo '#{pull_secret_content}' > pull-secrets.sh && chmod +x pull-secrets.sh"
 end
 
 directory "/root/.ssh" do
