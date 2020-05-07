@@ -124,6 +124,20 @@ Host github.com
 EOS
 end
 
+file "/root/.gitconfig" do
+  content <<-"EOS"
+[user]
+        name = Yu SERIZAWA
+        email = upamune@gmail.com
+        signingKey = B6723863E95D9B53499E4D5FD4DE578B07087AC0
+[gpg]
+        program = gpg
+[commit]
+        gpgsign = true
+
+EOS
+end
+
 execute "Install SpaceVim" do
   command "curl -sLf https://spacevim.org/install.sh | bash"
   not_if "test -e /root/.SpaceVim"
