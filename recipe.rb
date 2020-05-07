@@ -113,6 +113,18 @@ execute "Create pull-secret.sh" do
   command "echo '#{pull_secret_content}' > pull-secrets.sh && chmod +x pull-secrets.sh"
 end
 
+ssh_config_content = <<-"EOS"
+Host github.com
+	HostName github.com
+	User git
+  IdentityFile ~/.ssh/id_ed25519
+EOS
+
+execute "Added config of ssh" do
+  command "mkdir -p ~/.ssh && chmod 0700 ~/.ssh && echo '#{ssh_config_content}' > ~/.ssh/config && chmod 600 ~/.ssh/config"
+  not_if "test -e /root/.ssh/config"
+end
+
 execute "Install SpaceVim" do
   command "curl -sLf https://spacevim.org/install.sh | bash"
   not_if "test -e /root/.SpaceVim"
