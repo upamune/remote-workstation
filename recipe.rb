@@ -89,18 +89,12 @@ execute "Install sdkman" do
 end
 
 execute "Install Java" do
-  command <<-"EOS"
-    bash -c "source /root/.sdkman/bin/sdkman-init.sh && \
-    sdk install java
-  EOS
+  command "bash -c 'source /root/.sdkman/bin/sdkman-init.sh && sdk install java'"
   not_if "which javac"
 end
 
 execute "Install Kotlin" do
-  command <<-"EOS"
-    bash -c "source /root/.sdkman/bin/sdkman-init.sh && \
-    sdk install kotlin"
-  EOS
+  command "bash -c 'source /root/.sdkman/bin/sdkman-init.sh && sdk install kotlin'"
   not_if "which kotlinc"
 end
 
