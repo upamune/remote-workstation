@@ -15,6 +15,7 @@ packages = [
   'gnupg',
   'gnupg2',
   'golang-go',
+  'emacs-gtk',
   'htop',
   'jq',
   'locales',
@@ -136,6 +137,10 @@ file "/root/.gitconfig" do
         gpgsign = true
 
 EOS
+end
+
+git "/root/.emacs.d" do
+  repository "git://github.com/syl20bnr/spacemacs"
 end
 
 execute "Install SpaceVim" do
