@@ -189,6 +189,23 @@ execute "Deploy .tmux.conf" do
   command "ln -s -f /root/.tmux/.tmux.conf /root/.tmux.conf"
 end
 
+git "/root/.zplug" do
+  repository "git://github.com/zplug/zplug"
+end
+
+git "/root/dotfiles" do
+  repository "git://github.com/upamune/dotfiles"
+end
+
+execute "Deploy and Install dotfiles" do
+  command "make deploy"
+  cwd "/root/dotfiles"
+end
+
+execute "use zsh" do
+  command "chsh -s /usr/bin/zsh root"
+end
+
 execute "Set correct timezone" do
     command "ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime"
 end
