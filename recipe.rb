@@ -179,7 +179,14 @@ execute "Install SpaceVim" do
   not_if "test -e /root/.SpaceVim"
 end
 
+git "/root/.tmux" do
+  repository "git://github.com/gpakosz/.tmux"
+end
+
+execute "Deploy .tmux.conf" do
+  command "ln -s -f /root/.tmux/.tmux.conf /root/.tmux.conf"
+end
+
 execute "Set correct timezone" do
     command "ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime"
 end
-
