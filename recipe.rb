@@ -15,6 +15,7 @@ packages = [
   'gnupg',
   'gnupg2',
   'golang-go',
+  'emacs-gtk',
   'htop',
   'jq',
   'locales',
@@ -80,6 +81,19 @@ execute "Copy go tools to /usr/local/bin" do
     command "cp -fr $(go env GOPATH)/bin/* /usr/local/bin/"
 end
 
+execute "Install sdkman" do
+  command "curl -s https://get.sdkman.io | bash"
+  not_if "test -e /root/.sdkman/bin/sdkman-init.sh"
+end
+
+execute "Install Kotlin" do
+  command <<-"EOS"
+    bash -c "source /root/.sdkman/bin/sdkman-init.sh && \
+    sdk install java && \
+    sdk install kotlin"
+  EOS
+end
+
 execute "Install 1Password CLI" do
   command <<-"EOS"
     export OP_VERSION="v0.10.0"
@@ -88,6 +102,16 @@ execute "Install 1Password CLI" do
     rm -f 1password.zip
   EOS
   not_if "test -e /usr/local/bin/op"
+end
+
+execute "Install ktlint" do
+  command <<-"EOS"
+    export KTLINT_VERSION=0.36.0
+    curl -sSLO https://github.com/pinterest/ktlint/releases/download/${KTLINT_VERSION}/ktlint && \
+    chmod +x ktlint && \
+    mv ktlint /usr/local/bin/
+  EOS
+  not_if "test -e /usr/local/bin/ktlint"
 end
 
 file "/root/.bootstrap/pull-secrets.sh" do
@@ -136,6 +160,10 @@ file "/root/.gitconfig" do
         gpgsign = true
 
 EOS
+end
+
+git "/root/.emacs.d" do
+  repository "git://github.com/syl20bnr/spacemacs"
 end
 
 execute "Install SpaceVim" do
