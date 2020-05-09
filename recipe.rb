@@ -18,6 +18,8 @@ packages = [
   'emacs-gtk',
   'htop',
   'jq',
+  'language-pack-ja',
+  'language-pack-ja-base',
   'locales',
   'man',
   'mosh',
@@ -86,12 +88,14 @@ execute "Install sdkman" do
   not_if "test -e /root/.sdkman/bin/sdkman-init.sh"
 end
 
+execute "Install Java" do
+  command "bash -c 'source /root/.sdkman/bin/sdkman-init.sh && sdk install java'"
+  not_if "which javac"
+end
+
 execute "Install Kotlin" do
-  command <<-"EOS"
-    bash -c "source /root/.sdkman/bin/sdkman-init.sh && \
-    sdk install java && \
-    sdk install kotlin"
-  EOS
+  command "bash -c 'source /root/.sdkman/bin/sdkman-init.sh && sdk install kotlin'"
+  not_if "which kotlinc"
 end
 
 execute "Install 1Password CLI" do
@@ -171,7 +175,31 @@ execute "Install SpaceVim" do
   not_if "test -e /root/.SpaceVim"
 end
 
+git "/root/.tmux" do
+  repository "git://github.com/gpakosz/.tmux"
+end
+
+execute "Deploy .tmux.conf" do
+  command "ln -s -f /root/.tmux/.tmux.conf /root/.tmux.conf"
+end
+
+git "/root/.zplug" do
+  repository "git://github.com/zplug/zplug"
+end
+
+git "/root/dotfiles" do
+  repository "git://github.com/upamune/dotfiles"
+end
+
+execute "Deploy and Install dotfiles" do
+  command "make deploy"
+  cwd "/root/dotfiles"
+end
+
+execute "use zsh" do
+  command "chsh -s /usr/bin/zsh root"
+end
+
 execute "Set correct timezone" do
     command "ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime"
 end
-
