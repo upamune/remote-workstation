@@ -58,19 +58,24 @@ end
 
 go_packages = [
   'github.com/davidrjenni/reftools/cmd/fillstruct',
+  'github.com/fatih/gomodifytags',
+  'github.com/fatih/motion',
+  'github.com/go-delve/delve/cmd/dlv',
+  'github.com/go-toolsmith/astfmt',
+  'github.com/josharian/impl',
+  'github.com/jstemmer/gotags',
+  'github.com/kisielk/errcheck',
+  'github.com/koron/iferr',
   'github.com/mdempsky/gocode',
   'github.com/rogpeppe/godef',
+  'github.com/x-motemen/ghq',
   'github.com/zmb3/gogetdoc',
+  'golang.org/x/lint/golint',
   'golang.org/x/tools/cmd/goimports',
   'golang.org/x/tools/cmd/gorename',
   'golang.org/x/tools/cmd/guru',
   'golang.org/x/tools/gopls',
-  'golang.org/x/lint/golint',
-  'github.com/josharian/impl',
   'honnef.co/go/tools/cmd/keyify',
-  'github.com/fatih/gomodifytags',
-  'github.com/fatih/motion',
-  'github.com/koron/iferr',
 ]
 
 go_packages.each do |p|
@@ -81,6 +86,11 @@ end
 
 execute "Copy go tools to /usr/local/bin" do
     command "cp -fr $(go env GOPATH)/bin/* /usr/local/bin/"
+end
+
+execute "Install golangci-lint" do
+  command "curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.26.0"
+  not_if "test -e $(go env GOPATH)/bin/golangci-lint"
 end
 
 execute "Install sdkman" do
