@@ -18,6 +18,8 @@ packages = [
   'emacs-gtk',
   'htop',
   'jq',
+  'language-pack-ja',
+  'language-pack-ja-base',
   'locales',
   'man',
   'mosh',
