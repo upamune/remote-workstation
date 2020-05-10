@@ -100,12 +100,12 @@ end
 
 execute "Install Java" do
   command "bash -c 'source /root/.sdkman/bin/sdkman-init.sh && sdk install java'"
-  not_if "which javac"
+  not_if "test -e /root/.sdkman/candidates/java"
 end
 
 execute "Install Kotlin" do
   command "bash -c 'source /root/.sdkman/bin/sdkman-init.sh && sdk install kotlin'"
-  not_if "which kotlinc"
+  not_if "test -e /root/.sdkman/candidates/kotlin"
 end
 
 execute "Install 1Password CLI" do
