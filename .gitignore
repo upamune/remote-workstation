@@ -241,3 +241,7 @@ venv.bak/
 pip-selfcheck.json
 
 # End of https://www.gitignore.io/api/vim,macos,python,pycharm,virtualenv
+#
+#
+.lego/
+lego.zip
