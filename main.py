@@ -4,6 +4,7 @@ import sys
 import textwrap
 import time
 import digitalocean as do
+import logging
 
 
 class RemoteWorkstation:
@@ -17,13 +18,15 @@ class RemoteWorkstation:
                  server_tag='remote-workstation',
                  firewall_id=None,
                  snapshot_id=None,
-                 floating_ip=None):
+                 floating_ip=None,
+                 logger=logging.getLogger()):
         self.token = token
         self.server_name = server_name
         self.server_tag = server_tag
         self.firewall_id = firewall_id
         self.snapshot_id = snapshot_id
         self.floating_ip = floating_ip
+        self.logger = logger
 
     def __manager(self):
         return do.Manager(token=self.token)
@@ -44,9 +47,11 @@ class RemoteWorkstation:
         return self.__manager().get_droplet(server_id)
 
     def __create_server(self):
+        self.logger.info('creating a server...')
         image = self.snapshot_id \
             if self.snapshot_id is not None and self.snapshot_id != "" \
             else self.IMAGE
+        self.logger.info('snapshot_id is %s', image)
 
         ssh_keys = self.get_ssh_keys()
 
@@ -61,24 +66,34 @@ class RemoteWorkstation:
             user_data=self.__user_data(),
         )
         droplet.create()
+        self.logger.info('created a droplet')
 
         if self.firewall_id is not None and self.firewall_id != "":
+            self.logger.info('getting the firewall request by id: %s', self.firewall_id)
             firewall = self.__manager().get_firewall(self.firewall_id)
+            self.logger.info('adding the firewall to the droplet')
             firewall.add_droplets(droplet_ids=[droplet.id])
+            self.logger.info('added the firewall to the droplet')
 
         if self.floating_ip is not None and self.floating_ip != "":
             actions = droplet.get_actions()
             if len(actions) > 0:
                 action = actions[0]
+                self.logger.info('waiting the action(%s)', action)
                 action.wait()
+            self.logger.info('getting the floating_ip by %s', self.floating_ip)
             floating_ip = self.__manager().get_floating_ip(self.floating_ip)
+            self.logger.info('adding the floating_ip to the droplet')
             floating_ip.assign(droplet_id=droplet.id)
+            self.logger.info('assigned the floating_ip to the droplet')
 
         return droplet.id
 
     def get_or_create_server(self):
+        self.logger.info('getting or creating a server...')
         s = self.get_server_by_name()
         if s is not None:
+            self.logger.info('already exists a server')
             return s
 
         server_id = self.__create_server()
@@ -133,10 +148,16 @@ if __name__ == '__main__':
         sys.exit(1)
 
     cmd = args[0]
+
+    fmt = "[%(levelname)s] %(asctime)s: %(message)s"
+    logging.basicConfig(level=logging.INFO, format=fmt)
+    logger = logging.getLogger(__name__)
+
     ws = RemoteWorkstation(token=options.token,
                            snapshot_id=options.snapshot_id,
                            floating_ip=options.floating_ip,
-                           firewall_id=options.firewall_id)
+                           firewall_id=options.firewall_id,
+                           logger=logger)
 
     if cmd == "create":
         server = ws.get_or_create_server()
